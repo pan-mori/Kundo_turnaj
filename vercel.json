@@ -1,11 +1,6 @@
 {
-  "buildCommand": "",
-  "devCommand": "",
-  "installCommand": "",
-  "framework": "static",
-  "public": true,
+  "outputDirectory": "kundo",
   "cleanUrls": true,
-  "trailingSlash": false,
   "headers": [
     {
       "source": "/(.*)",
