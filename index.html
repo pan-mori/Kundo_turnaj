@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turnaj - Správce</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #f0f0f0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1920px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        /* DVOUSLOUPCOVÝ LAYOUT */
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .discipline-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .discipline-title {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 3px solid #333;
+        }
+
+        /* SKUPINY */
+        .groups-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .group {
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .group-header {
+            background: transparent;
+            color: #333;
+            padding: 10px;
+            font-weight: bold;
+            font-size: 14px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .group-content {
+            padding: 15px;
+        }
+
+        /* TABULKA PRO ZÁPISY */
+        .match-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+
+        .match-table th {
+            background: #f0f0f0;
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+            font-weight: bold;
+        }
+
+        .match-table td {
+            padding: 6px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+
+        .match-table .player-name {
+            text-align: left;
+            padding-left: 8px;
+            font-weight: bold;
+            color: white !important;
+        }
+
+        /* BARVY V TABULCE */
+        .match-table td.red { background: #ef4444; }
+        .match-table td.blue { background: #3b82f6; }
+        .match-table td.green { background: #22c55e; }
+        .match-table td.yellow { background: #eab308; }
+
+        /* POLÍČKA S SKÓRE */
+        .score-cell {
+            background: white;
+            position: relative;
+            min-width: 50px;
+        }
+
+        .score-cell input {
+            width: 100%;
+            border: none;
+            padding: 4px 2px;
+            text-align: center;
+            font-size: 12px;
+            background: transparent;
+        }
+
+        .score-cell input:focus {
+            outline: 2px solid #3b82f6;
+            background: #f0f0f0;
+        }
+
+        /* POLÍČKA S VÝSLEDKEM */
+        .result-cell {
+            padding: 4px 2px;
+            font-weight: bold;
+            min-width: 40px;
+            background: white;
+            cursor: pointer;
+            border: 2px solid transparent;
+            color: white !important;
+        }
+
+        .result-cell.red { background: #ef4444; }
+        .result-cell.blue { background: #3b82f6; }
+        .result-cell.green { background: #22c55e; }
+        .result-cell.yellow { background: #eab308; }
+
+        .result-cell:hover {
+            opacity: 0.8;
+        }
+
+        /* BODY SLOUPEC */
+        .points-cell {
+            font-weight: bold;
+            min-width: 35px;
+            background: #fff9e6;
+        }
+
+        /* PAVOUK */
+        .bracket-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 30px;
+        }
+
+        .bracket-title {
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #333;
+        }
+
+        .bracket-content {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+        }
+
+        .bracket {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            overflow-x: auto;
+            padding: 10px 0;
+        }
+
+        .bracket-round {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            gap: 10px;
+            position: relative;
+            z-index: 1;
+            min-width: 150px;
+            flex-shrink: 0;
+        }
+
+        .bracket-round-title {
+            font-weight: bold;
+            font-size: 11px;
+            text-align: center;
+            margin-bottom: 8px;
+            color: #666;
+        }
+
+        /* Osmifinále - párované rozložení */
+        .bracket-round:nth-child(1) {
+            gap: 0;
+            justify-content: flex-start;
+        }
+
+        /* Wrapper pro páry v osmifinále */
+        .match-pair {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            margin-bottom: 40px;
+        }
+
+        /* Čtvrtfinále */
+        .bracket-round:nth-child(2) {
+            gap: 30px;
+            justify-content: flex-start;
+        }
+
+        /* Semifinále */
+        .bracket-round:nth-child(3) {
+            gap: 80px;
+            justify-content: flex-start;
+        }
+
+        /* Finále */
+        .bracket-round:nth-child(4) {
+            gap: 180px;
+            justify-content: flex-start;
+        }
+
+        .match-box {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            min-height: 50px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .match-player {
+            flex: 1;
+            padding: 4px 6px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 10px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .match-player:last-child {
+            border-bottom: none;
+        }
+
+        .match-player.red { background: #fecaca; }
+        .match-player.blue { background: #bfdbfe; }
+        .match-player.green { background: #bbf7d0; }
+        .match-player.yellow { background: #fef08a; }
+
+        .match-player.winner {
+            font-weight: bold;
+            background: #86efac !important;
+        }
+
+        .match-player input[type="checkbox"] {
+            width: 12px;
+            height: 12px;
+            cursor: pointer;
+            margin: 0;
+        }
+
+        /* DROPDOWN SELECTOR */
+        .player-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            background: white;
+            border: 1px solid #999;
+            border-radius: 4px;
+            z-index: 1000;
+            max-height: 250px;
+            overflow-y: auto;
+            min-width: 200px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            margin-top: 2px;
+        }
+
+        .player-option {
+            padding: 10px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            color: #333;
+            transition: background-color 0.15s;
+        }
+
+        .player-option:hover {
+            background-color: #f0f0f0;
+        }
+
+        .player-option:last-child {
+            border-bottom: none;
+        }
+
+        /* FINÁLNÍ ŽEBŘÍČEK */
+        .ranking-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-top: 30px;
+        }
+
+        .ranking-title {
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #333;
+        }
+
+        .ranking-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+        }
+
+        .ranking-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .ranking-list h3 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 16px;
+            border-bottom: 2px solid #ddd;
+            padding-bottom: 8px;
+        }
+
+        .ranking-item {
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            border-left: 4px solid #999;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+        }
+
+        .ranking-item.red { border-left-color: #ef4444; }
+        .ranking-item.blue { border-left-color: #3b82f6; }
+        .ranking-item.green { border-left-color: #22c55e; }
+        .ranking-item.yellow { border-left-color: #eab308; }
+
+        .ranking-number {
+            font-weight: bold;
+            font-size: 16px;
+            margin-right: 10px;
+            min-width: 25px;
+        }
+
+        .ranking-name {
+            flex: 1;
+        }
+
+        .ranking-points {
+            font-weight: bold;
+            color: #666;
+        }
+
+        /* BUTTONS */
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        button {
+            background: #3b82f6;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        button:hover {
+            background: #2563eb;
+        }
+
+        button.reset {
+            background: #ef4444;
+        }
+
+        button.reset:hover {
+            background: #dc2626;
+        }
+    </style>
+</head>
+<body>
+    <h1> Turnaj KUNDO - Správce</h1>
+
+    <!-- DVĚ DISCIPLÍNY VEDLE SEBE -->
+    <div class="main-content">
+        <div class="discipline-container">
+            <div class="discipline-title">🗡️ Meč</div>
+            <div class="groups-wrapper" id="discipline1Groups"></div>
+        </div>
+
+        <div class="discipline-container">
+            <div class="discipline-title">🗡️+🛡️ Meč + Štít</div>
+            <div class="groups-wrapper" id="discipline2Groups"></div>
+        </div>
+    </div>
+
+    <!-- PAVOUK -->
+    <div class="bracket-container">
+        <div class="bracket-title">PAVOUK</div>
+        <div class="bracket-content" id="bracketContent"></div>
+    </div>
+
+    <!-- FINÁLNÍ ŽEBŘÍČEK -->
+    <div class="ranking-container">
+        <div class="ranking-title">🏆 Finální žebříček</div>
+        <div class="ranking-content" id="rankingContent"></div>
+    </div>
+
+    <div class="button-group">
+        <button class="reset" onclick="resetAll()">Resetovat vše</button>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
