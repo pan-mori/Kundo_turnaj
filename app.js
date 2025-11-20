@@ -1,25 +1,39 @@
-// CSV DATA - Budou se parsovat z souboru
-const csvData = `name	meč	meč+stít
-Honza Bělina	1	1
-Jan Zajíc	0	1
-Adam Pospíšil	1	1
-Dan Bělina	1	1
-Václav Hutník	1	1
-Daniel Kocur	1	1
-Ondřej Paprskář	1	1
-Radek Vyskočil	1	0
-Petr Ospálek	1	1
-Pan Mori	1	0
-Roman Král	1	1
-Novotný Radek	1	1
-Josef Rydlo	1	1
-Petr Erlebach	1	1
-David Smyk Vorel	1	1
-Vít Hrachový	1	1
-Matěj Palka	1	1
-Jan Winzig	1	1
-Apollinaire Beslon	1	1
-Přemysl Jiří Kokeš	1	1`;
+// CSV DATA - Přímo z dat
+const csvMec = `jméno
+Honza Bělina
+Roman Král
+Radek Vyskočil
+Josef Rydlo
+Pan Mori
+Václav Hutník
+Novotný Radek 
+Petr Erlebach
+Ondra Novák
+Petr Ospálek 
+David Smyk Vorel
+Vít Hrachový
+Dan Bělina 
+Daniel Kocur
+Ondřej Paprskář 
+Matěj Palka`;
+
+const csvMecStit = `jméno
+Dan Bělina 
+Petr Ospálek 
+Petr Erlebach
+Jan Winzig
+Václav Hutník
+Vít Hrachový
+Ondřej Paprskář 
+Josef Rydlo
+Jan Zajíc
+Roman Král
+Matěj Palka
+David Smyk Vorel
+Honza Bělina
+Daniel Kocur
+Novotný Radek 
+Apollinaire`;
 
 const COLORS = ['red', 'blue', 'green', 'yellow'];
 const COLOR_NAMES = {
@@ -37,23 +51,21 @@ let tournamentData = {
 };
 
 // PARSOVÁNÍ CSV
-function parseCSV() {
+function parseCSV(csvData, disciplineIndex) {
     const lines = csvData.trim().split('\n');
-    const header = lines[0].split('\t');
+    if (lines.length < 2) return []; // Kontrola, jestli jsou data
+
     const players = [];
 
     for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split('\t');
-        const name = values[0].trim();
-        const discipline1 = parseInt(values[1]) === 1;
-        const discipline2 = parseInt(values[2]) === 1;
+        const name = lines[i].trim();
 
         if (name) {
             players.push({
                 id: i,
                 name: name,
-                discipline1: discipline1,
-                discipline2: discipline2
+                discipline1: disciplineIndex === 0,
+                discipline2: disciplineIndex === 1
             });
         }
     }
@@ -78,15 +90,41 @@ function loadData() {
 
 // INICIALIZACE TURNAJE
 function initTournament() {
-    const allPlayers = parseCSV();
+    const players1 = parseCSV(csvMec, 0); // Meč
+    const players2 = parseCSV(csvMecStit, 1); // Meč + Štít
 
-    // Rozdělení hráčů na disciplíny
-    const players1 = allPlayers.filter(p => p.discipline1);
-    const players2 = allPlayers.filter(p => p.discipline2);
+    // Slouč hráče - pokud se objeví v obou CSV, měl by být s oběma disciplínami
+    const allPlayersMap = {};
+
+    players1.forEach(p => {
+        if (!allPlayersMap[p.name]) {
+            allPlayersMap[p.name] = { ...p };
+        } else {
+            allPlayersMap[p.name].discipline1 = true;
+        }
+    });
+
+    players2.forEach(p => {
+        if (!allPlayersMap[p.name]) {
+            allPlayersMap[p.name] = { ...p };
+        } else {
+            allPlayersMap[p.name].discipline2 = true;
+        }
+    });
+
+    const allPlayers = Object.values(allPlayersMap).map((p, idx) => ({
+        ...p,
+        id: idx + 1 // Přiřaď konsistentní ID
+    }));
 
     tournamentData.players = allPlayers;
-    tournamentData.discipline1 = createDiscipline(players1, 'Meč');
-    tournamentData.discipline2 = createDiscipline(players2, 'Meč + Štít');
+
+    // Filtruj hráče pro každou disciplínu
+    const discipline1Players = allPlayers.filter(p => p.discipline1);
+    const discipline2Players = allPlayers.filter(p => p.discipline2);
+
+    tournamentData.discipline1 = createDiscipline(discipline1Players, 'Meč');
+    tournamentData.discipline2 = createDiscipline(discipline2Players, 'Meč + Štít');
 
     saveData();
 }
@@ -94,10 +132,10 @@ function initTournament() {
 // NÁHODNÉ MÍCHÁNÍ POLE
 function shuffleArray(array) {
     const arr = [...array];
-    for (let i = arr.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-    }
+    // for (let i = arr.length - 1; i > 0; i--) {
+    //     const j = Math.floor(Math.random() * (i + 1));
+    //     [arr[i], arr[j]] = [arr[j], arr[i]];
+    // }
     return arr;
 }
 
@@ -109,11 +147,11 @@ function createDiscipline(players, name) {
     // Náhodné míchání hráčů
     const shuffledPlayers = shuffleArray(players);
 
-    // Rozdělení do 4 skupin po 4 lidech
+    // Rozdělení do 4 skupin po 4 lidech - postupně
     for (let i = 0; i < 4; i++) {
         const groupPlayers = [];
         for (let j = 0; j < 4; j++) {
-            const playerIdx = i + j * 4;
+            const playerIdx = i * 4 + j;
             if (playerIdx < shuffledPlayers.length) {
                 groupPlayers.push(shuffledPlayers[playerIdx]);
             }
@@ -151,18 +189,44 @@ function createDiscipline(players, name) {
             }
         }
 
-        // Seřazení aby se barvy střídaly
-        matches.sort((a, b) => {
-            // Upřednostni zápasy kde se barvy moc liší
-            const colorDiffA = Math.abs(a.j - a.k);
-            const colorDiffB = Math.abs(b.j - b.k);
-            if (colorDiffA !== colorDiffB) {
-                return colorDiffA - colorDiffB; // Nejdřív ty s max rozdílem barev
-            }
-            return a.j - b.j;
+        // Optimalizované seřazení - minimalizuje opakování hráčů za sebou
+        const orderedMatches = [];
+        const remainingMatches = [...matches];
+
+        // Začni s zápasem, který má největší rozdíl hráčů (aby se hráči maximálně lišili)
+        remainingMatches.sort((a, b) => {
+            const diffA = Math.abs(a.j - a.k);
+            const diffB = Math.abs(b.j - b.k);
+            return diffB - diffA; // Od největšího rozdílu
         });
 
-        group.matches = matches;
+        orderedMatches.push(remainingMatches.shift());
+
+        // Pro každý další zápas vyber ten, který má nejméně společných hráčů s posledním zápasem
+        while (remainingMatches.length > 0) {
+            let bestMatch = remainingMatches[0]; // Výchozí zápas - první ze zbylých
+            let bestScore = -2;
+            let bestIdx = 0;
+
+            remainingMatches.forEach((match, idx) => {
+                const lastMatch = orderedMatches[orderedMatches.length - 1];
+                // Počet společných hráčů: 0 = nejlepší, 2 = nejhorší
+                const commonPlayers = (match.j === lastMatch.j || match.j === lastMatch.k ? 1 : 0) +
+                                    (match.k === lastMatch.j || match.k === lastMatch.k ? 1 : 0);
+                const score = -commonPlayers; // Negace pro seřazení
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestMatch = match;
+                    bestIdx = idx;
+                }
+            });
+
+            orderedMatches.push(bestMatch);
+            remainingMatches.splice(bestIdx, 1);
+        }
+
+        group.matches = orderedMatches;
 
         groups.push(group);
     }
