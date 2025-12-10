@@ -837,7 +837,8 @@ function openPlayerSelector(discIdx, roundIdx, matchIdx, playerPosition, element
             match.player2 = player.id;
         }
 
-        updateBracketProgression(discIdx, roundIdx, matchIdx, player.id);
+        // Odstraněno automatické propisování do dalšího kola
+        // updateBracketProgression(discIdx, roundIdx, matchIdx, player.id);
         inputField.remove();
         suggestionsContainer.remove();
         document.removeEventListener('click', closeInput);
