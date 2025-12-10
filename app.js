@@ -1139,5 +1139,175 @@ function resetAll() {
     }
 }
 
+// EXPORT DO EXCELU
+function exportToExcel() {
+    const workbook = XLSX.utils.book_new();
+
+    // ===== MEČ - SKUPINY =====
+    const mecGroupsData = [];
+    mecGroupsData.push(['MEČ - BODY V KOLECH']);
+    mecGroupsData.push([]);
+
+    tournamentData.discipline1.groups.forEach((group, groupIdx) => {
+        mecGroupsData.push([`Skupina ${group.id}`]);
+        mecGroupsData.push(['Hráč 1', 'Skóre 1', 'Skóre 2', 'Hráč 2', 'Body 1', 'Body 2']);
+
+        group.matches.forEach(match => {
+            mecGroupsData.push([
+                match.player1Name,
+                match.score1,
+                match.score2,
+                match.player2Name,
+                match.points1,
+                match.points2
+            ]);
+        });
+
+        mecGroupsData.push([]);
+    });
+
+    const mecGroupsSheet = XLSX.utils.aoa_to_sheet(mecGroupsData);
+    XLSX.utils.book_append_sheet(workbook, mecGroupsSheet, 'Meč - Skupiny');
+
+    // ===== MEČ + ŠTÍT - SKUPINY =====
+    const mecStitGroupsData = [];
+    mecStitGroupsData.push(['MEČ + ŠTÍT - BODY V KOLECH']);
+    mecStitGroupsData.push([]);
+
+    tournamentData.discipline2.groups.forEach((group, groupIdx) => {
+        mecStitGroupsData.push([`Skupina ${group.id}`]);
+        mecStitGroupsData.push(['Hráč 1', 'Skóre 1', 'Skóre 2', 'Hráč 2', 'Body 1', 'Body 2']);
+
+        group.matches.forEach(match => {
+            mecStitGroupsData.push([
+                match.player1Name,
+                match.score1,
+                match.score2,
+                match.player2Name,
+                match.points1,
+                match.points2
+            ]);
+        });
+
+        mecStitGroupsData.push([]);
+    });
+
+    const mecStitGroupsSheet = XLSX.utils.aoa_to_sheet(mecStitGroupsData);
+    XLSX.utils.book_append_sheet(workbook, mecStitGroupsSheet, 'Meč+Štít - Skupiny');
+
+    // ===== MEČ - PAVOUK =====
+    const mecBracketData = [];
+    mecBracketData.push(['MEČ - POSTUP V PAVOUKU']);
+    mecBracketData.push([]);
+
+    tournamentData.discipline1.bracket.rounds.forEach((round, roundIdx) => {
+        mecBracketData.push([round.title]);
+        mecBracketData.push(['Hráč 1', 'Hráč 2', 'Vítěz']);
+
+        round.matches.forEach((match, matchIdx) => {
+            const p1 = tournamentData.players.find(p => p.id === match.player1);
+            const p2 = tournamentData.players.find(p => p.id === match.player2);
+            const winner = tournamentData.players.find(p => p.id === match.winner);
+
+            mecBracketData.push([
+                p1 ? p1.name : '-',
+                p2 ? p2.name : '-',
+                winner ? winner.name : '-'
+            ]);
+        });
+
+        mecBracketData.push([]);
+    });
+
+    // Přidej vítěze
+    mecBracketData.push(['VÍTĚZ TURNAJE']);
+    mecBracketData.push([tournamentData.winners[0] || '-']);
+
+    const mecBracketSheet = XLSX.utils.aoa_to_sheet(mecBracketData);
+    XLSX.utils.book_append_sheet(workbook, mecBracketSheet, 'Meč - Pavouk');
+
+    // ===== MEČ + ŠTÍT - PAVOUK =====
+    const mecStitBracketData = [];
+    mecStitBracketData.push(['MEČ + ŠTÍT - POSTUP V PAVOUKU']);
+    mecStitBracketData.push([]);
+
+    tournamentData.discipline2.bracket.rounds.forEach((round, roundIdx) => {
+        mecStitBracketData.push([round.title]);
+        mecStitBracketData.push(['Hráč 1', 'Hráč 2', 'Vítěz']);
+
+        round.matches.forEach((match, matchIdx) => {
+            const p1 = tournamentData.players.find(p => p.id === match.player1);
+            const p2 = tournamentData.players.find(p => p.id === match.player2);
+            const winner = tournamentData.players.find(p => p.id === match.winner);
+
+            mecStitBracketData.push([
+                p1 ? p1.name : '-',
+                p2 ? p2.name : '-',
+                winner ? winner.name : '-'
+            ]);
+        });
+
+        mecStitBracketData.push([]);
+    });
+
+    // Přidej vítěze
+    mecStitBracketData.push(['VÍTĚZ TURNAJE']);
+    mecStitBracketData.push([tournamentData.winners[1] || '-']);
+
+    const mecStitBracketSheet = XLSX.utils.aoa_to_sheet(mecStitBracketData);
+    XLSX.utils.book_append_sheet(workbook, mecStitBracketSheet, 'Meč+Štít - Pavouk');
+
+    // ===== MEČ - FINÁLNÍ ŽEBŘÍČEK =====
+    const mecRankingData = [];
+    mecRankingData.push(['MEČ - FINÁLNÍ ŽEBŘÍČEK']);
+    mecRankingData.push([]);
+    mecRankingData.push(['Pořadí', 'Jméno', 'Body']);
+
+    const mecRanking = calculateRanking(tournamentData.discipline1);
+    mecRanking.forEach((entry, idx) => {
+        mecRankingData.push([
+            idx + 1,
+            entry.name,
+            entry.points
+        ]);
+    });
+
+    const mecRankingSheet = XLSX.utils.aoa_to_sheet(mecRankingData);
+    XLSX.utils.book_append_sheet(workbook, mecRankingSheet, 'Meč - Žebříček');
+
+    // ===== MEČ + ŠTÍT - FINÁLNÍ ŽEBŘÍČEK =====
+    const mecStitRankingData = [];
+    mecStitRankingData.push(['MEČ + ŠTÍT - FINÁLNÍ ŽEBŘÍČEK']);
+    mecStitRankingData.push([]);
+    mecStitRankingData.push(['Pořadí', 'Jméno', 'Body']);
+
+    const mecStitRanking = calculateRanking(tournamentData.discipline2);
+    mecStitRanking.forEach((entry, idx) => {
+        mecStitRankingData.push([
+            idx + 1,
+            entry.name,
+            entry.points
+        ]);
+    });
+
+    const mecStitRankingSheet = XLSX.utils.aoa_to_sheet(mecStitRankingData);
+    XLSX.utils.book_append_sheet(workbook, mecStitRankingSheet, 'Meč+Štít - Žebříček');
+
+    // ===== VÍTĚZOVÉ =====
+    const winnersData = [];
+    winnersData.push(['VÍTĚZOVÉ TURNAJE']);
+    winnersData.push([]);
+    winnersData.push(['Disciplína', 'Vítěz']);
+    winnersData.push(['Meč', tournamentData.winners[0] || '-']);
+    winnersData.push(['Meč + Štít', tournamentData.winners[1] || '-']);
+
+    const winnersSheet = XLSX.utils.aoa_to_sheet(winnersData);
+    XLSX.utils.book_append_sheet(workbook, winnersSheet, 'Vítězové');
+
+    // STAŽENÍ SOUBORU
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/:/g, '-');
+    XLSX.writeFile(workbook, `turnaj_kundo_${timestamp}.xlsx`);
+}
+
 // START
 loadData();
