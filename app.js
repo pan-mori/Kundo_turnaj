@@ -1,6 +1,6 @@
 // CSV DATA - Přímo z dat
 const csvMec = `jméno
-Honza Bělina
+Honza Sax
 Roman Král
 Radek Vyskočil
 Josef Rydlo
@@ -30,7 +30,7 @@ Jan Zajíc
 Roman Král
 Matěj Palka
 David Smyk Vorel
-Honza Bělina
+Honza Sax
 Daniel Kocur
 Novotný Radek 
 Apollinaire`;
