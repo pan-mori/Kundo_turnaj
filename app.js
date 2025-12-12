@@ -93,35 +93,42 @@ function initTournament() {
     const players1 = parseCSV(csvMec, 0); // Meč
     const players2 = parseCSV(csvMecStit, 1); // Meč + Štít
 
-    // Slouč hráče - pokud se objeví v obou CSV, měl by být s oběma disciplínami
-    const allPlayersMap = {};
+    // Slouč hráče - použij pole místo objektu pro zachování pořadí
+    const allPlayersMap = new Map();
 
+    // Nejdřív přidej hráče z csvMec (disciplína Meč)
     players1.forEach(p => {
-        if (!allPlayersMap[p.name]) {
-            allPlayersMap[p.name] = { ...p };
+        if (!allPlayersMap.has(p.name)) {
+            allPlayersMap.set(p.name, { ...p });
         } else {
-            allPlayersMap[p.name].discipline1 = true;
+            allPlayersMap.get(p.name).discipline1 = true;
         }
     });
 
+    // Pak přidej hráče z csvMecStit (disciplína Meč + Štít)
     players2.forEach(p => {
-        if (!allPlayersMap[p.name]) {
-            allPlayersMap[p.name] = { ...p };
+        if (!allPlayersMap.has(p.name)) {
+            allPlayersMap.set(p.name, { ...p });
         } else {
-            allPlayersMap[p.name].discipline2 = true;
+            allPlayersMap.get(p.name).discipline2 = true;
         }
     });
 
-    const allPlayers = Object.values(allPlayersMap).map((p, idx) => ({
+    const allPlayers = Array.from(allPlayersMap.values()).map((p, idx) => ({
         ...p,
         id: idx + 1 // Přiřaď konsistentní ID
     }));
 
     tournamentData.players = allPlayers;
 
-    // Filtruj hráče pro každou disciplínu
-    const discipline1Players = allPlayers.filter(p => p.discipline1);
-    const discipline2Players = allPlayers.filter(p => p.discipline2);
+    // Zachovej pořadí z původních CSV souborů pro každou disciplínu
+    const discipline1Players = players1.map(p1 =>
+        allPlayers.find(ap => ap.name === p1.name)
+    ).filter(p => p);
+
+    const discipline2Players = players2.map(p2 =>
+        allPlayers.find(ap => ap.name === p2.name)
+    ).filter(p => p);
 
     tournamentData.discipline1 = createDiscipline(discipline1Players, 'Meč');
     tournamentData.discipline2 = createDiscipline(discipline2Players, 'Meč + Štít');
